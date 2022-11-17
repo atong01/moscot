@@ -183,3 +183,26 @@ class LeafDistance(BaseCost):
                 raise ValueError("Leaves do not match `AnnData`'s observation names, please specify `cell_to_leaf`.")
             return [cell_to_leaf[cell] for cell in self.adata.obs.index]
         return [cell for cell in self.adata.obs_names if cell in leaves]
+
+class GeodesicDistance(BaseCost):
+    """ Graph Diffusion Distance Geodesic cost.
+
+    This is cost between x_i and x_j is defined as log(P^t)_ij where P is a
+    random walk over some predefined affinity graph.
+
+    Looks in adata.obsp["connectivities"] for an adjacency matrix
+    """
+
+    def _compute(self, x: ArrayLike, y: ArrayLike, t=50, *args: Any, **kwargs: Any) -> ArrayLike:
+        import pygsp
+        W = adata.obsp["connectivities"]
+        graph = pygsp.graphs.Graph(W)
+        heat_filter = pygsp.filters.Heat(G, t)
+        diffusion_distances = filt.filter(np.eye(graph.K.shape[0]))
+        df = diffusion_distances[x, y]
+        cost = -np.log(df + 1e-16)
+        return cost
+        
+
+
+
